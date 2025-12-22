@@ -7,6 +7,7 @@
     background: #fff;
     padding-bottom: 30px;
 }
+
 .header{
     display: flex;
     flex-direction: column;
@@ -20,8 +21,6 @@
     color:#800080 ;
     font-size: 40px;
     font-weight: 700;
-
-    
 }
 
 .underline{
@@ -29,7 +28,6 @@
     height: 6px;
     background:#800080;
     border-radius: 9px;
-
 }
 
 .inputs{
@@ -49,38 +47,40 @@
     margin: auto;
     gap: 20px;   
     padding: 0 20px;
-
 }
 
-
-
 .input input{
-     width: 100%;
+    width: 100%;
     height: 100%;
     background: transparent;
     border: none;
     outline: none;
     font-size: 18px;
 }
+
 .input img{
     width: 28px;
     height: 28px;
 }
+
 .forgot-password{
     padding-left: 62px;
     margin-top: 27px;
     color: #797979;
     font-size: 18px;
 }
+
 .forgot-password span{
     color: #4c004c;
     cursor: pointer;
 }
+
 .submit-container{
     display: flex;
     gap: 30px;
-    margin: 60px auto;
+    margin: 60px auto 20px auto; /* bottom spacing for tabs */
 }
+
 .submit{
     display: flex;
     justify-content: center;
@@ -94,7 +94,34 @@
     font-weight: 700;
     cursor: pointer;
 }
+
 .gray{
     background: #eaeaea;
     color: #676767;
+}
+
+.tab-container{
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 30px; /* space from bottom */
+}
+
+.tab {
+    padding: 10px 30px;
+    border-radius: 50px; /* match submit button rounded */
+    background-color: #800080;
+    color: white;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 18px;
+    transition: 0.3s;
+}
+
+.tab.active {
+    background-color: #4c004c; /* darker purple for active tab */
+}
+
+.tab:hover {
+    opacity: 0.8;
 }
