@@ -21,7 +21,7 @@ const Login = () => {
   };
   
   const handleLogin = () => {
-  fetch("http://localhost:5000/login", {
+  fetch(`${process.env.REACT_APP_API_URL}/login`,{
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ 
@@ -47,7 +47,7 @@ const Login = () => {
 
 
   const handleSignup = () => {
-  fetch("http://localhost:5000/signup", {
+  fetch(`${process.env.REACT_APP_API_URL}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -114,7 +114,7 @@ const Login = () => {
           <input
             type="password"
             placeholder="Password"
-            value={setFormState.password}
+            value={FormState.password}
             onChange={(e) => handleChange("password",e.target.value)}
           />
         </div>

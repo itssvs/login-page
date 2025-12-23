@@ -1,8 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
+const db = require('./config/db');
 
 const app = express();
 const PORT = 5000;
@@ -11,39 +12,7 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
-mongoose.connect('mongodb://localhost:27017/authdb',)
- 
-  .then(() => console.log('✅ MongoDB connected successfully'))
-  .catch(err => console.log('❌ MongoDB connection error:', err));
-
-// User Schema
-const UserSchema = new mongoose.Schema({
-  name: { 
-    type: String, 
-    required: true 
-  },
-  email: { 
-    type: String, 
-    required: true, 
-    unique: true,
-    lowercase: true,
-    trim: true
-  },
-  password: { 
-    type: String, 
-    required: true 
-  },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  }
-});
-
-const User = mongoose.model('User', UserSchema);
-
-// JWT Secret (IMPORTANT: Use environment variable in production!)
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // ==================== SIGNUP ROUTE ====================
 app.post('/signup', async (req, res) => {
@@ -73,8 +42,12 @@ app.post('/signup', async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
+    const [existingUsers] = await db.query(
+      'SELECT * FROM users WHERE email = ?',
+      [email.toLowerCase()]
+    );
+
+    if (existingUsers.length > 0) {
       return res.status(400).json({ 
         message: 'User already exists with this email' 
       });
@@ -84,18 +57,15 @@ app.post('/signup', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create new user
-    const newUser = new User({
-      name,
-      email: email.toLowerCase(),
-      password: hashedPassword
-    });
-
-    await newUser.save();
+    // Insert new user
+    const [result] = await db.query(
+      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+      [name, email.toLowerCase(), hashedPassword]
+    );
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: newUser._id, email: newUser.email },
+      { userId: result.insertId, email: email.toLowerCase() },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -104,9 +74,9 @@ app.post('/signup', async (req, res) => {
       message: 'Signup successful',
       token,
       user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email
+        id: result.insertId,
+        name: name,
+        email: email.toLowerCase()
       }
     });
 
@@ -131,12 +101,18 @@ app.post('/login', async (req, res) => {
     }
 
     // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
+    const [users] = await db.query(
+      'SELECT * FROM users WHERE email = ?',
+      [email.toLowerCase()]
+    );
+
+    if (users.length === 0) {
       return res.status(401).json({ 
         message: 'Invalid email or password' 
       });
     }
+
+    const user = users[0];
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -148,7 +124,7 @@ app.post('/login', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user.id, email: user.email },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -157,7 +133,7 @@ app.post('/login', async (req, res) => {
       message: 'Login successful',
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email
       }
@@ -191,12 +167,21 @@ const verifyToken = (req, res, next) => {
 // ==================== PROTECTED ROUTE EXAMPLE ====================
 app.get('/dashboard', verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password');
+    const [users] = await db.query(
+      'SELECT id, name, email, created_at FROM users WHERE id = ?',
+      [req.userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     res.json({ 
       message: 'Welcome to dashboard',
-      user 
+      user: users[0]
     });
   } catch (error) {
+    console.error('Dashboard error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
