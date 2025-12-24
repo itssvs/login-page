@@ -1,33 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import './Dashboard.css';
-import { authFetch, isAuthenticated, removeToken } from "../../utils/auth";
+import { useAuth } from "../../context/AuthContext";
 
 const Dashboard = () => {
-  const [user, setUser] = useState(null);
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/");
-      return;
+    if (!user) {
+      updateUser();
     }
-
-    loadUser();
-  }, [navigate]);
-
-  const loadUser = async () => {
-    try {
-      const data = await authFetch("/dashboard");
-      setUser(data.user);
-    } catch {
-      handleLogout();
-    }
-  };
+  }, [user, updateUser]);
 
   const handleLogout = () => {
-    removeToken();
-    alert("You have been logged out successfully!");
+    logout();
     navigate("/");
   };
 
